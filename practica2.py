@@ -98,10 +98,35 @@ def decimado(data, k, cifrar):
         return bytes((k * b) % 256 for b in data)
     else: 
         inv = inversos256.get(k)
-
         if inv is None: 
             raise ValueError("k no tiene inverso en Z256")
         return bytes((inv * b) % 256 for b in data)
+
+def fuerza_bruta_decimado(data):
+
+    firmas = [
+        "25504446",  # PDF
+        "504b0304",  # DOCX/EPUB
+        "494433",    # MP3
+        "52494646",  # WAV
+        "4f676753"   # OGG
+    ]
+
+    for k in range(1,256,2):
+
+        intento = decimado(data, k, False)
+
+        magic = intento[:4].hex()
+
+        if any(magic.startswith(f) for f in firmas):
+
+            print("Este es el bueno")
+            print("k =",k)
+            print("magic_bytes =",magic)
+
+            return intento   
+
+    return None
 
 def main():
     parser = argparse.ArgumentParser()
@@ -113,7 +138,7 @@ def main():
     group.add_argument('-c', '--cifrar',   action='store_true')
     group.add_argument('-d', '--decifrar', action='store_true')
 
-    parser.add_argument('-a', '--algoritmo', choices= ['cesar', 'decimado'])
+    parser.add_argument('-a', '--algoritmo', choices= ['cesar', 'decimado', 'fuerza_bruta_decimado'])
     parser.add_argument('-k1', '--key1', type=int)
 
     arg = parser.parse_args()
@@ -129,6 +154,9 @@ def main():
         
         elif arg.algoritmo == 'decimado': 
             ans = decimado(data, arg.key1, arg.cifrar)
+        
+        elif arg.algoritmo == "fuerza_bruta_decimado":
+            ans = fuerza_bruta_decimado(data)
 
         # WRITE
         with open(arg.output, "wb") as f:
