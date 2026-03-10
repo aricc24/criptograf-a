@@ -102,6 +102,26 @@ def decimado(data, k, cifrar):
             raise ValueError("k no tiene inverso en Z256")
         return bytes((inv * b) % 256 for b in data)
 
+'''
+Implementación del cifrado afín sobre bytes.
+Cifrado Uso:
+# python3 practica2.py archivo -a afin -c -k1 a -k2 b -o salida
+Descifrado Uso: 
+# python3 practica2.py archivo.lol -a afin -d -k1 a -k2 b -o salida.ext
+'''
+def afin(data, a, b, cifrar):
+
+    if cifrar:
+        return bytes((a*bte + b) % 256 for bte in data)
+
+    else:
+        inv = inversos256.get(a)
+
+        if inv is None:
+            raise ValueError("a no tiene inverso en Z256")
+
+        return bytes((inv*(bte - b)) % 256 for bte in data)
+
 def fuerza_bruta_decimado(data):
 
     firmas = [
@@ -127,6 +147,49 @@ def fuerza_bruta_decimado(data):
             return intento   
 
     return None
+'''
+Ataque de fuerza bruta contra cifrado afín.
+Prueba todas las combinaciones posibles de (a, b) en Z256.
+Solo se prueban valores impares de 'a'
+Se descifran los primeros 32 bytes del archivo y se comparan con firmas
+conocidas de magic bytes. Solo si se detecta firma válida se descifra todo el archivo. 
+
+Uso:
+# python3 practica2.py archivo.lol -a fuerza_bruta_afin -o salida.ext
+'''
+def fuerza_bruta_afin(data):
+
+    firmas = [
+        "25504446",  # PDF
+        "504b0304",  # DOCX/EPUB
+        "494433",    # MP3
+        "52494646",  # WAV
+        "4f676753",  # OGG
+        "89504e47",  # PNG
+        "ffd8ff"     # JPG
+    ]
+
+    for a in range(1,256):
+
+        if a % 2 == 0:
+            continue
+
+        inv = inversos256[a]
+
+        for b in range(256):
+
+            test = bytes((inv*(y-b)) % 256 for y in data[:32])
+
+            magic = test[:4].hex()
+
+            if any(magic.startswith(f) for f in firmas):
+
+                print("Clave encontrada")
+                print("a =",a,"b =",b)
+
+                return bytes((inv*(y-b)) % 256 for y in data)
+
+    return None
 
 def main():
     parser = argparse.ArgumentParser()
@@ -138,8 +201,9 @@ def main():
     group.add_argument('-c', '--cifrar',   action='store_true')
     group.add_argument('-d', '--decifrar', action='store_true')
 
-    parser.add_argument('-a', '--algoritmo', choices= ['cesar', 'decimado', 'fuerza_bruta_decimado'])
+    parser.add_argument('-a', '--algoritmo', choices= ['cesar', 'decimado', 'afin', 'fuerza_bruta_decimado', 'fuerza_bruta_afin'])
     parser.add_argument('-k1', '--key1', type=int)
+    parser.add_argument('-k2', '--key2', type=int)
 
     arg = parser.parse_args()
 
@@ -157,6 +221,12 @@ def main():
         
         elif arg.algoritmo == "fuerza_bruta_decimado":
             ans = fuerza_bruta_decimado(data)
+
+        elif arg.algoritmo == 'afin':
+            ans = afin(data, arg.key1, arg.key2, arg.cifrar)
+
+        elif arg.algoritmo == "fuerza_bruta_afin":
+            ans = fuerza_bruta_afin(data)
 
         # WRITE
         with open(arg.output, "wb") as f:
