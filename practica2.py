@@ -1,5 +1,8 @@
 import sys
-
+'''
+Este código me lo tome de:
+https://whatisnote.eokultv.com/files/169507-how-to-master-file-identification-with-magic-bytes-in-python-314-a-forensic-deep-dive
+'''
 def get_magic_bytes(filepath, num_bytes=8):
     try:
         with open(filepath, 'rb') as f:
@@ -7,6 +10,30 @@ def get_magic_bytes(filepath, num_bytes=8):
         return magic_bytes
     except FileNotFoundError:
         return None
+
+def identify_file_type(magic_bytes):
+    signatures = {
+        '89504e47': 'PNG image',
+        '47494638': 'GIF image',
+        'ffd8ffe0': 'JPEG image',
+        '504b0304': 'ZIP archive'
+    }
+    
+    magic_hex = magic_bytes.hex()
+    for signature, file_type in signatures.items():
+        if magic_hex.startswith(signature):
+            return file_type
+    return 'Unknown file type'
+
+def analyze_file(filepath):
+    magic_bytes = get_magic_bytes(filepath)
+    if magic_bytes:
+        file_type = identify_file_type(magic_bytes)
+        print(f'File: {filepath}')
+        print(f'Magic Bytes: {magic_bytes.hex()}')
+        print(f'Identified File Type: {file_type}')
+    else:
+        print('File not found.')
 
 def inspect(b):
     print("bytes: ", b)
@@ -164,6 +191,104 @@ def fuerza_bruta_afin(data):
 
     return None
 
+def base64(data, cifrar):
+    if cifrar:
+        return base64_encode(data)
+    else:
+        return base64_decode(data)
+
+'''
+Implementación del codificado Base64
+Cifrado Uso:
+# python3 practica2.py archivo -a base64 -c -o salida
+Descifrado Uso: 
+# python3 practica2.py archivo -a base64 -d -o salida
+'''
+def base64_encode(data):
+    base64_table = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
+    encoded = []
+
+    for i in range(0, len(data), 3):
+        chunk = data[i:i+3]
+
+        padding = 3 - len(chunk)
+
+        if len(chunk) < 3:
+            chunk += b"\x00" * padding
+
+        buffer = (chunk[0] << 16) | (chunk[1] << 8) | chunk[2]
+
+        idx1 = (buffer >> 18) & 0x3F
+        idx2 = (buffer >> 12) & 0x3F
+        idx3 = (buffer >> 6) & 0x3F
+        idx4 = buffer & 0x3F
+
+        encoded.append(base64_table[idx1])
+        encoded.append(base64_table[idx2])
+
+        if padding == 2:
+            encoded.append("=")
+            encoded.append("=")
+        elif padding == 1:
+            encoded.append(base64_table[idx3])
+            encoded.append("=")
+        else:
+            encoded.append(base64_table[idx3])
+            encoded.append(base64_table[idx4])
+
+    return "".join(encoded).encode("ascii")
+
+
+def base64_decode(data):
+    base64_table = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
+    decoded_bytes = bytearray()
+
+    if isinstance(data, bytes):
+        data = data.decode("ascii")
+
+    data = "".join(data.split())
+
+    if len(data) % 4 != 0:
+        raise ValueError("La entrada debe tener longitud múltiplo de 4")
+
+    for i in range(0, len(data), 4):
+        chunk = data[i:i+4]
+
+        values = []
+        padding = 0
+
+        for c in chunk:
+            if c == "=":
+                values.append(0)
+                padding += 1
+            else:
+                pos = base64_table.find(c)
+                if pos == -1:
+                    raise ValueError(f"Carácter inválido en Base64: {c}")
+                values.append(pos)
+
+        # reconstruir 24 bits
+        buffer = (
+            (values[0] << 18) |
+            (values[1] << 12) |
+            (values[2] << 6)  |
+            values[3]
+        )
+
+        byte1 = (buffer >> 16) & 0xFF
+        byte2 = (buffer >> 8) & 0xFF
+        byte3 = buffer & 0xFF
+
+        decoded_bytes.append(byte1)
+
+        if padding < 2:
+            decoded_bytes.append(byte2)
+
+        if padding < 1:
+            decoded_bytes.append(byte3)
+
+    return bytes(decoded_bytes)
+
 def main():
     if len(sys.argv) < 5:
         print("Uso:")
@@ -173,7 +298,7 @@ def main():
     filename = sys.argv[1]
     algoritmo = None
     cifrar = False
-    decifrar = False
+    descifrar = False
     key1 = None
     key2 = None
     output = None
@@ -189,7 +314,7 @@ def main():
             cifrar = True
             i += 1
         elif arg == "-d":
-            decifraf = True
+            descifrar = True
             i += 1
         elif arg == "-k1":
             key1 = int(sys.argv[i+1])
@@ -222,6 +347,9 @@ def main():
 
         elif algoritmo == "fuerza_bruta_afin":
             ans = fuerza_bruta_afin(data)
+
+        elif algoritmo == "base64":
+            ans = base64(data, cifrar)
 
         else:
             print("Algoritmo no válido")
