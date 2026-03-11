@@ -1,8 +1,5 @@
 import sys
-'''
-Este código me lo tome de:
-https://whatisnote.eokultv.com/files/169507-how-to-master-file-identification-with-magic-bytes-in-python-314-a-forensic-deep-dive
-'''
+
 def get_magic_bytes(filepath, num_bytes=8):
     try:
         with open(filepath, 'rb') as f:
@@ -10,30 +7,6 @@ def get_magic_bytes(filepath, num_bytes=8):
         return magic_bytes
     except FileNotFoundError:
         return None
-
-def identify_file_type(magic_bytes):
-    signatures = {
-        '89504e47': 'PNG image',
-        '47494638': 'GIF image',
-        'ffd8ffe0': 'JPEG image',
-        '504b0304': 'ZIP archive'
-    }
-    
-    magic_hex = magic_bytes.hex()
-    for signature, file_type in signatures.items():
-        if magic_hex.startswith(signature):
-            return file_type
-    return 'Unknown file type'
-
-def analyze_file(filepath):
-    magic_bytes = get_magic_bytes(filepath)
-    if magic_bytes:
-        file_type = identify_file_type(magic_bytes)
-        print(f'File: {filepath}')
-        print(f'Magic Bytes: {magic_bytes.hex()}')
-        print(f'Identified File Type: {file_type}')
-    else:
-        print('File not found.')
 
 def inspect(b):
     print("bytes: ", b)
