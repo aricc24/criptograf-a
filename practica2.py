@@ -75,6 +75,13 @@ def cesar(data, k, cifrar):
         k = k * -1
     return bytes((b + k) % 256 for b in data)
 
+
+'''
+Cifrado por decimado (multiplicativo) sobre Zmod256.
+Para que sea válido, k debe ser coprimo con 256 (es decir, k debe ser impar).
+Cifrado: C = (k * P) mod 256
+Descifrado: P = (k^-1 * C) mod 256
+'''
 def decimado(data, k, cifrar): 
     if cifrar: 
         return bytes((k * b) % 256 for b in data)
@@ -104,6 +111,11 @@ def afin(data, a, b, cifrar):
 
         return bytes((inv*(bte - b)) % 256 for bte in data)
 
+'''
+Ataque de fuerza bruta para el cifrado de decimado.
+Itera sobre todos los posibles inversos multiplicativos en Z256 (llaves impares).
+Utiliza firmas de archivos (Magic Bytes) para identificar si el descifrado fue exitoso.
+'''
 def fuerza_bruta_decimado(data):
 
     firmas = [
