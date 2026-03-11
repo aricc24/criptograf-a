@@ -1,5 +1,7 @@
 import sys
-
+'''
+Regresa los primeros 8 bytes de una archivo dada su ruta.
+'''
 def get_magic_bytes(filepath, num_bytes=8):
     try:
         with open(filepath, 'rb') as f:
@@ -8,11 +10,25 @@ def get_magic_bytes(filepath, num_bytes=8):
     except FileNotFoundError:
         return None
 
+'''
+Imprime en terminal las representaciones en hexadecimal y enteros de un arreglo de bytes
+'''
 def inspect(b):
     print("bytes: ", b)
     print("int: ",list(b))
     print("hex: ", b.hex())
     print("\n")
+
+# Esto Hardcodeado fue para analizar
+# file_path_1 = 'files/file1.lol'
+# file_path_2 = 'files/file2.lol'
+# file_path_3 = 'files/file3.lol'
+# file_path_4 = 'files/file4.lol'
+
+# inspect(get_magic_bytes(file_path_1)) # FILE1 -> MP4
+# inspect(get_magic_bytes(file_path_2))
+# inspect(get_magic_bytes(file_path_3))
+# inspect(get_magic_bytes(file_path_4)) # FILE4 -> JPG
 
 '''
 Retornar el inverso de a módulo 256, cuando existe.
@@ -43,20 +59,13 @@ def getInv(a):
     
     return t
 
+'''
+Diccionario global con todos los inversos módulo 256
+'''
 inversos256 = {}
 for i in range(1,256,2):
     inversos256[i] = getInv(i)
 
-# Esto Hardcodeado es para analizar
-file_path_1 = 'files/file1.lol'
-file_path_2 = 'files/file2.lol'
-file_path_3 = 'files/file3.lol'
-file_path_4 = 'files/file4.lol'
-
-inspect(get_magic_bytes(file_path_1)) # FILE1 -> MP4
-inspect(get_magic_bytes(file_path_2))
-inspect(get_magic_bytes(file_path_3))
-inspect(get_magic_bytes(file_path_4)) # FILE4 -> JPG
 
 '''
 Cifrado de César (también decifrador con -k) ^^
