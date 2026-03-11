@@ -1,4 +1,4 @@
-import argparse
+import sys
 '''
 Este código me lo tome de:
 https://whatisnote.eokultv.com/files/169507-how-to-master-file-identification-with-magic-bytes-in-python-314-a-forensic-deep-dive
@@ -192,50 +192,76 @@ def fuerza_bruta_afin(data):
     return None
 
 def main():
-    parser = argparse.ArgumentParser()
+    if len(sys.argv) < 5:
+        print("Uso:")
+        print("python3 practica2.py archivo -a algoritmo -c|-d -k1 clave1 [-k2 clave2] -o salida")
+        return
 
-    parser.add_argument("filename", help="Ruta del archivo.")
-    parser.add_argument("-o", "--output", help="Ruta del archivo de salida.")
+    filename = sys.argv[1]
+    algoritmo = None
+    cifrar = False
+    decifrar = False
+    key1 = None
+    key2 = None
+    output = None
 
-    group = parser.add_mutually_exclusive_group()
-    group.add_argument('-c', '--cifrar',   action='store_true')
-    group.add_argument('-d', '--decifrar', action='store_true')
+    i = 2
+    while i < len(sys.argv): 
+        arg = sys.argv[i]
 
-    parser.add_argument('-a', '--algoritmo', choices= ['cesar', 'decimado', 'afin', 'fuerza_bruta_decimado', 'fuerza_bruta_afin'])
-    parser.add_argument('-k1', '--key1', type=int)
-    parser.add_argument('-k2', '--key2', type=int)
-
-    arg = parser.parse_args()
-
+        if arg == "-a":
+            algoritmo = sys.argv[i+1]
+            i += 2
+        elif arg == "-c":
+            cifrar = True
+            i += 1
+        elif arg == "-d":
+            decifraf = True
+            i += 1
+        elif arg == "-k1":
+            key1 = int(sys.argv[i+1])
+            i += 2
+        elif arg == "-k2":
+            key2 = int(sys.argv[i+1])
+            i += 2
+        elif arg == "-o":
+            output = sys.argv[i+1]
+            i += 2
+        else:
+            i += 1
     try:
-        # READ
-        with open(arg.filename, "rb") as f:
+         # READ
+        with open(filename, "rb") as f:
             data = f.read()
 
-        # CIFRAR y DECIFRAR
-        if arg.algoritmo == 'cesar':
-            ans = cesar(data, arg.key1, arg.cifrar)
-        
-        elif arg.algoritmo == 'decimado': 
-            ans = decimado(data, arg.key1, arg.cifrar)
-        
-        elif arg.algoritmo == "fuerza_bruta_decimado":
+        # PROCESAR
+        if algoritmo == "cesar":
+            ans = cesar(data, key1, cifrar)
+
+        elif algoritmo == "decimado":
+            ans = decimado(data, key1, cifrar)
+
+        elif algoritmo == "afin":
+            ans = afin(data, key1, key2, cifrar)
+
+        elif algoritmo == "fuerza_bruta_decimado":
             ans = fuerza_bruta_decimado(data)
 
-        elif arg.algoritmo == 'afin':
-            ans = afin(data, arg.key1, arg.key2, arg.cifrar)
-
-        elif arg.algoritmo == "fuerza_bruta_afin":
+        elif algoritmo == "fuerza_bruta_afin":
             ans = fuerza_bruta_afin(data)
 
+        else:
+            print("Algoritmo no válido")
+            return
+
         # WRITE
-        with open(arg.output, "wb") as f:
-            f.write(ans)
+        if output:
+            with open(output, "wb") as f:
+                f.write(ans)
+            print("Archivo guardado en:", output)
 
     except FileNotFoundError:
-        print("ERROR")
-
-
+        print("ERROR: archivo no encontrado")
 
 if __name__ == "__main__":
     main()
